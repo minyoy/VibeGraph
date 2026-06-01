@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-apple-dark text-apple-text font-sans;
+  }
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-apple-dark;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-apple-border rounded-full;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-apple-card border border-apple-border rounded-2xl p-5;
+  }
+  .btn-primary {
+    @apply bg-apple-pink text-white font-semibold px-5 py-2.5 rounded-xl
+           hover:opacity-90 active:scale-95 transition-all disabled:opacity-40
+           disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-apple-border text-apple-text font-semibold px-5 py-2.5 rounded-xl
+           hover:bg-opacity-80 active:scale-95 transition-all;
+  }
+  .badge {
+    @apply text-xs font-medium px-2.5 py-1 rounded-full;
+  }
+}
