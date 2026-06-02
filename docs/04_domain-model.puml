@@ -1,0 +1,81 @@
+@startuml
+title VibeGraph Domain Model
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide methods
+
+class User {
+  id: string
+  createdAt: timestamp
+}
+
+class Playlist {
+  id: string
+  name: string
+  trackCount: int
+  artwork: string?
+  createdAt: timestamp
+}
+
+class Track {
+  id: string
+  title: string
+  artist: string
+  genre: string
+  albumArt: string?
+}
+
+class Artist {
+  name: string
+}
+
+class Genre {
+  name: string
+}
+
+class TasteAnalysis {
+  topArtists: list
+  topGenres: list
+  detectedTaste: list<string>
+  moodTags: list<string>
+}
+
+class RecommendedTrack {
+  id: string
+  title: string
+  artist: string
+  genre: string
+  score: float
+  graphPath: string
+  reason: string
+}
+
+class AgentExplanation {
+  playlistName: string
+  explanation: string
+  tracks: list<RecommendedTrack>
+}
+
+User "1" --> "0..*" Playlist : OWNS
+Playlist "1" --> "0..*" Track : CONTAINS
+Track "0..*" --> "1" Artist : BY
+Track "0..*" --> "1" Genre : HAS_GENRE
+Artist "0..*" --> "0..*" Genre : HAS_GENRE
+
+User ..> TasteAnalysis : analyzed from graph
+User ..> RecommendedTrack : receives
+RecommendedTrack ..> AgentExplanation : enriched by LLM
+
+note right of Artist
+  확장 후보:
+  Artist -[:SIMILAR_TO]-> Artist
+  외부 API 또는 임베딩 기반으로 생성
+end note
+
+note bottom of RecommendedTrack
+  graphPath는 추천 설명 가능성을 위한 핵심 필드.
+  예: User -> Playlist -> Track -> Genre[Pop] -> Candidate
+end note
+
+@enduml

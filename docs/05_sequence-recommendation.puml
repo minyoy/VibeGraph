@@ -1,0 +1,55 @@
+@startuml
+title VibeGraph Recommendation Sequence
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "사용자" as User
+participant "React Dashboard" as FE
+participant "FastAPI\n/recommendations" as RecAPI
+participant "GraphRecommendationService" as RecService
+participant "Neo4jService" as Neo4jService
+database "Neo4j" as Neo4j
+participant "FastAPI\n/agent/explain" as AgentAPI
+participant "AgentService" as AgentService
+participant "OpenAI API" as OpenAI
+
+User -> FE : Graph 추천 생성 클릭
+FE -> RecAPI : GET /recommendations/{userId}?limit=10
+RecAPI -> RecService : get_recommendations(userId, limit)
+RecService -> Neo4jService : get_recommendations(userId, limit)
+Neo4jService -> Neo4j : 상위 장르 기반 후보 탐색
+
+alt 후보 있음
+  Neo4j --> Neo4jService : candidate tracks + graphPath + score
+  Neo4jService --> RecService : list<RecommendedTrack>
+  RecService --> RecAPI : candidates
+  RecAPI --> FE : 200 OK
+  FE -> User : 추천 후보와 graphPath 표시
+else 후보 없음
+  Neo4j --> Neo4jService : empty result
+  Neo4jService --> RecService : []
+  RecService --> RecAPI : NoRecommendationsError
+  RecAPI --> FE : 500 detail
+  FE -> User : 더 많은 플레이리스트 동기화 안내
+end
+
+User -> FE : AI 추천 이유 생성 클릭
+FE -> AgentAPI : POST /agent/explain\n{userId, candidates, tasteProfile}
+AgentAPI -> AgentService : explain_recommendations(candidates, tasteProfile)
+AgentService -> OpenAI : JSON 응답 형식으로 추천 이유 요청
+
+alt JSON 응답 성공
+  OpenAI --> AgentService : playlistName, explanation, tracks.reason
+  AgentService -> AgentService : candidate와 reason 병합
+  AgentService --> AgentAPI : AgentExplainResponse
+  AgentAPI --> FE : 200 OK
+  FE -> User : 플레이리스트 이름과 추천 이유 표시
+else LLM 호출 또는 JSON 파싱 실패
+  OpenAI --> AgentService : error or invalid JSON
+  AgentService --> AgentAPI : LLMError
+  AgentAPI --> FE : 500 detail
+  FE -> User : AI 설명 생성 오류 표시
+end
+
+@enduml

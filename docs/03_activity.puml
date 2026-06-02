@@ -1,0 +1,78 @@
+@startuml
+title VibeGraph Activity Diagram
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  FontColor #0F172A
+}
+
+start
+
+:사용자가 Apple Music으로 로그인;
+if (Music-User-Token 획득?) then (예)
+  :플레이리스트 목록 요청;
+  :플레이리스트 목록 표시;
+else (아니오)
+  :인증 오류 표시;
+  stop
+endif
+
+:사용자가 분석할 플레이리스트 선택;
+if (1개 이상 선택?) then (예)
+  :Graph DB 동기화 요청;
+else (아니오)
+  :선택 필요 메시지 표시;
+  stop
+endif
+
+:백엔드가 선택된 플레이리스트별 트랙 조회;
+if (Apple Music API 성공?) then (예)
+  :Neo4j에 User/Playlist/Track/Artist/Genre 저장;
+  :동기화 결과 표시\n(nodesCreated, relationshipsCreated);
+else (아니오)
+  :Apple Music 오류 표시;
+  stop
+endif
+
+:취향 분석 요청;
+if (Neo4j 연결 성공?) then (예)
+  :Top Artists, Top Genres,\nDetected Taste, Mood Tags 표시;
+else (아니오)
+  :Neo4j 연결 오류 표시;
+  stop
+endif
+
+:Graph 추천 후보 요청;
+if (추천 후보 존재?) then (예)
+  :추천 후보와 graphPath 표시;
+else (아니오)
+  :더 많은 플레이리스트 동기화 안내;
+  stop
+endif
+
+:AI 추천 이유 생성 요청;
+if (OpenAI JSON 응답 성공?) then (예)
+  :플레이리스트 이름, 전체 설명,\n트랙별 추천 이유 표시;
+else (아니오)
+  :LLM 오류 표시;
+  stop
+endif
+
+:사용자가 추천 플레이리스트 생성 클릭;
+if (trackIds와 musicUserToken 유효?) then (예)
+  :Apple Music에 새 플레이리스트 생성;
+else (아니오)
+  :생성 불가 메시지 표시;
+  stop
+endif
+
+if (생성 성공?) then (예)
+  :생성된 playlistId와 성공 메시지 표시;
+else (아니오)
+  :Apple Music 생성 오류 표시;
+endif
+
+stop
+@enduml
