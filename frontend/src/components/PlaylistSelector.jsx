@@ -84,7 +84,9 @@ export default function PlaylistSelector({ musicUserToken, onSelect, onSync }) {
                 )}
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{pl.name}</p>
-                  <p className="text-apple-muted text-xs">{pl.trackCount}곡</p>
+                  <p className="text-apple-muted text-xs">
+                    {typeof pl.trackCount === 'number' ? `${pl.trackCount}곡` : '곡 수 확인 필요'}
+                  </p>
                 </div>
                 {isSelected && <span className="ml-auto text-apple-pink">✓</span>}
               </button>

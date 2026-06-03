@@ -68,3 +68,6 @@
   2. Artist SIMILAR_TO 미구현 — Last.fm 또는 MusicBrainz API 연동 필요                                          
   3. 추천 알고리즘 단순 — 장르 가중치 기반. PageRank/Node2Vec으로 고도화 가능                                   
   4. MusicKit JS — Safari/Chrome 브라우저 환경 필수 (iOS WebView 별도 처리 필요) 
+
+
+  
