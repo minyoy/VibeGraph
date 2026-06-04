@@ -4,52 +4,45 @@ title VibeGraph Recommendation Sequence
 skinparam shadowing false
 skinparam sequenceMessageAlign center
 
-actor "사용자" as User
-participant "React Dashboard" as FE
-participant "FastAPI\n/recommendations" as RecAPI
-participant "GraphRecommendationService" as RecService
-participant "Neo4jService" as Neo4jService
-database "Neo4j" as Neo4j
-participant "FastAPI\n/agent/explain" as AgentAPI
-participant "AgentService" as AgentService
+actor "User" as User
+participant "React View" as FE
+participant "Recommendation API" as RecAPI
+participant "Recommendation Logic" as RecLogic
+database "Neo4j Graph DB" as Neo4j
+participant "AI Explanation API" as ExplainAPI
 participant "OpenAI API" as OpenAI
 
-User -> FE : Graph 추천 생성 클릭
-FE -> RecAPI : GET /recommendations/{userId}?limit=10
-RecAPI -> RecService : get_recommendations(userId, limit)
-RecService -> Neo4jService : get_recommendations(userId, limit)
-Neo4jService -> Neo4j : 상위 장르 기반 후보 탐색
+User -> FE : Click the Generate Recommendation button
+FE -> RecAPI : GET /recommendations/{userId}
 
-alt 후보 있음
-  Neo4j --> Neo4jService : candidate tracks + graphPath + score
-  Neo4jService --> RecService : list<RecommendedTrack>
-  RecService --> RecAPI : candidates
-  RecAPI --> FE : 200 OK
-  FE -> User : 추천 후보와 graphPath 표시
-else 후보 없음
-  Neo4j --> Neo4jService : empty result
-  Neo4jService --> RecService : []
-  RecService --> RecAPI : NoRecommendationsError
-  RecAPI --> FE : 500 detail
-  FE -> User : 더 많은 플레이리스트 동기화 안내
+RecAPI -> RecLogic : Request recommendations based on user taste
+RecLogic -> Neo4j : Find candidate tracks connected to frequently played genres
+
+alt Recommendation candidates exist
+Neo4j --> RecLogic : Return candidate tracks, scores, and recommendation paths
+RecLogic --> RecAPI : Organize recommendation results
+RecAPI --> FE : Return recommendation candidate list
+FE -> User : Display recommended tracks and graph paths
+else No recommendation candidates
+Neo4j --> RecLogic : Return empty result
+RecLogic --> RecAPI : No recommendation candidates
+RecAPI --> FE : Return insufficient data message
+FE -> User : Suggest syncing more playlists
 end
 
-User -> FE : AI 추천 이유 생성 클릭
-FE -> AgentAPI : POST /agent/explain\n{userId, candidates, tasteProfile}
-AgentAPI -> AgentService : explain_recommendations(candidates, tasteProfile)
-AgentService -> OpenAI : JSON 응답 형식으로 추천 이유 요청
+User -> FE : Click the Generate Explanation button
+FE -> ExplainAPI : POST /agent/explain\nSend candidates and taste profile
 
-alt JSON 응답 성공
-  OpenAI --> AgentService : playlistName, explanation, tracks.reason
-  AgentService -> AgentService : candidate와 reason 병합
-  AgentService --> AgentAPI : AgentExplainResponse
-  AgentAPI --> FE : 200 OK
-  FE -> User : 플레이리스트 이름과 추천 이유 표시
-else LLM 호출 또는 JSON 파싱 실패
-  OpenAI --> AgentService : error or invalid JSON
-  AgentService --> AgentAPI : LLMError
-  AgentAPI --> FE : 500 detail
-  FE -> User : AI 설명 생성 오류 표시
+ExplainAPI -> OpenAI : Request recommendation explanation using a prompt
+
+alt Explanation generated successfully
+OpenAI --> ExplainAPI : Return playlist name, overall explanation, and track-level reasons
+ExplainAPI --> FE : Return AI explanation result
+FE -> User : Display playlist name and reasons for each track
+else Explanation generation failed
+OpenAI --> ExplainAPI : Return an error or invalid response
+ExplainAPI --> FE : Return explanation failure message
+FE -> User : Display AI explanation error
 end
 
 @enduml

@@ -61,21 +61,29 @@ User "1" --> "0..*" Playlist : OWNS
 Playlist "1" --> "0..*" Track : CONTAINS
 Track "0..*" --> "1" Artist : BY
 Track "0..*" --> "1" Genre : HAS_GENRE
-Artist "0..*" --> "0..*" Genre : HAS_GENRE
 
-User ..> TasteAnalysis : analyzed from graph
+User ..> TasteAnalysis : analysis result
 User ..> RecommendedTrack : receives
-RecommendedTrack ..> AgentExplanation : enriched by LLM
+RecommendedTrack ..> Track : based on
+AgentExplanation "1" --> "0..*" RecommendedTrack : explains
 
 note right of Artist
   확장 후보:
   Artist -[:SIMILAR_TO]-> Artist
-  외부 API 또는 임베딩 기반으로 생성
+  Artist -[:RELATED_TO]-> Genre
+
+  외부 API 또는 임베딩 기반으로
+  유사 아티스트/장르 관계를 생성할 수 있다.
 end note
 
 note bottom of RecommendedTrack
   graphPath는 추천 설명 가능성을 위한 핵심 필드.
   예: User -> Playlist -> Track -> Genre[Pop] -> Candidate
+end note
+
+note bottom of TasteAnalysis
+  TasteAnalysis는 Graph DB에 저장되는 원천 데이터라기보다,
+  Neo4j 관계 탐색 결과를 바탕으로 생성되는 분석 결과 객체이다.
 end note
 
 @enduml
